@@ -2,14 +2,14 @@
 let alumniData = JSON.parse(localStorage.getItem('alumniDB')) || [
   {
     id: 1,
-    name: '이철수',
+    name: '이철수(시험용)',
     school: '서강대',
     major: '컴퓨터공학',
     year: '19학번',
   },
   {
     id: 2,
-    name: '김영희',
+    name: '김영희(시험용)',
     school: '서울대',
     major: '데이터분석',
     year: '20학번',
@@ -66,7 +66,9 @@ registerBtn.addEventListener('click', () => {
     return;
   }
 
-  const existing = alumniData.find((p) => p.name === name && p.school === school);
+  const existing = alumniData.find(
+    (p) => p.name === name && p.school === school,
+  );
 
   if (existing) {
     alert('이미 등록된 프로필입니다. "시작하기" 버튼을 눌러주세요!');
@@ -96,11 +98,13 @@ startBtn.addEventListener('click', () => {
       p.name === name &&
       p.school === school &&
       p.major === major &&
-      p.year === year
+      p.year === year,
   );
 
   if (!user) {
-    alert('일치하는 프로필 정보가 없습니다. 정보를 확인하거나 먼저 등록해주세요!');
+    alert(
+      '일치하는 프로필 정보가 없습니다. 정보를 확인하거나 먼저 등록해주세요!',
+    );
     return;
   }
 
@@ -240,7 +244,11 @@ document.getElementById('send-btn').onclick = () => {
 
 // 8. 정보 삭제 (탈퇴) 기능
 function deleteAlumni(id) {
-  if (confirm('정말로 탈퇴하시겠습니까? 등록된 모든 정보와 주고받은 메시지가 삭제됩니다.')) {
+  if (
+    confirm(
+      '정말로 탈퇴하시겠습니까? 등록된 모든 정보와 주고받은 메시지가 삭제됩니다.',
+    )
+  ) {
     // 1. 유저 정보 삭제
     alumniData = alumniData.filter((p) => p.id !== id);
     localStorage.setItem('alumniDB', JSON.stringify(alumniData));
