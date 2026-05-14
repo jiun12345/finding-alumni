@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KB 부트캠프 동문 찾기</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎓 KB 부트캠프 동문 찾기</h1>
+
+      <!-- 1단계: 프로필 등록/확인 섹션 -->
+      <div id="profile-section" class="registration-box">
+        <h3>👤 내 프로필 등록</h3>
+        <p>동문을 찾기 위해 먼저 본인의 정보를 등록해주세요.</p>
+        <div class="input-group">
+          <input
+            type="text"
+            id="my-school"
+            placeholder="내 학교 (예: 서강대)"
+          />
+          <input type="text" id="my-name" placeholder="이름 (필수)" />
+          <input type="text" id="my-major" placeholder="전공 (필수)" />
+          <input type="text" id="my-year" placeholder="학번 (필수)" />
+          <div class="button-group" style="width: 100%; display: flex; gap: 10px;">
+            <button id="register-btn" style="flex: 1;">프로필 등록</button>
+            <button id="start-btn" class="secondary-btn" style="flex: 1; background-color: #6c757d;">시작하기</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 내 프로필 정보 표시 (등록 후) -->
+      <div id="my-info-display" class="my-info-card" style="display: none">
+        <div class="info-header">
+          <h3>✅ 내 프로필</h3>
+          <div class="header-btns">
+            <button id="logout-btn" class="small-btn">로그아웃</button>
+            <button id="delete-account-btn" class="small-btn danger-btn" style="background-color: #ff4d4f;">탈퇴</button>
+          </div>
+        </div>
+        <p id="my-info-text" style="font-weight: bold; margin-bottom: 15px"></p>
+
+        <div class="message-inbox">
+          <h4>📩 받은 메시지함</h4>
+          <div id="message-list">
+            <p class="placeholder-text" style="font-size: 0.9rem">
+              받은 메시지가 없습니다.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <hr />
+
+      <!-- 2단계: 동문 검색 섹션 (프로필 등록 후 활성화) -->
+      <div id="search-section" style="opacity: 0.5; pointer-events: none">
+        <p class="subtitle">이제 같은 학교를 다니는 동문을 찾아보세요!</p>
+        <div class="search-box">
+          <input
+            type="text"
+            id="school-input"
+            placeholder="검색할 학교 이름을 입력하세요"
+          />
+          <button id="search-btn">동문 검색</button>
+        </div>
+
+        <!-- 결과 노출 섹션 -->
+        <div id="result-section">
+          <h2>검색 결과</h2>
+          <div id="alumni-list" class="grid-container">
+            <p class="placeholder-text">
+              학교를 검색하면 동문 리스트가 여기에 표시됩니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 메시지 모달 -->
+    <div id="message-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h3 id="modal-title">메시지 보내기</h3>
+        <textarea
+          id="message-text"
+          placeholder="동문에게 보낼 내용을 입력하세요..."
+        ></textarea>
+        <button id="send-btn">전송하기</button>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
