@@ -1,26 +1,51 @@
-// 1. 데이터 초기화
-let alumniData = JSON.parse(localStorage.getItem('alumniDB')) || [
-  {
-    id: 1,
-    name: '이철수(시험용)',
-    school: '서강대',
-    major: '컴퓨터공학',
-    year: '19학번',
-  },
-  {
-    id: 2,
-    name: '김영희(시험용)',
-    school: '서울대',
-    major: '데이터분석',
-    year: '20학번',
-  },
-];
+// 1. Firebase 설정 (본인의 Firebase Realtime Database 주소로 수정하세요)
+// 예: "https://project-id-default-rtdb.firebaseio.com/"
+const DATABASE_URL = 'https://finding-alumni-default-rtdb.firebaseio.com/';
 
-let messages = JSON.parse(localStorage.getItem('alumniMessages')) || [];
+// 데이터 초기 상태
+let alumniData = [];
+let messages = [];
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
-let currentTargetAlumni = null; // 메시지를 받을 대상
+let currentTargetAlumni = null;
 
-// 2. 요소 참조
+// 2. Firebase 데이터 통신 함수
+async function fetchData(path) {
+  try {
+    const response = await fetch(`${DATABASE_URL}${path}.json`);
+    const data = await response.json();
+    return data ? Object.values(data) : [];
+  } catch (error) {
+    console.error('데이터 로드 실패:', error);
+    return [];
+  }
+}
+
+async function postData(path, body) {
+  try {
+    await fetch(`${DATABASE_URL}${path}.json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    console.error('데이터 저장 실패:', error);
+    alert('서버 연결에 실패했습니다.');
+  }
+}
+
+// 초기 데이터 로드 및 UI 업데이트
+async function init() {
+  if (DATABASE_URL === 'YOUR_FIREBASE_URL_HERE') {
+    alert('script.js 상단의 DATABASE_URL을 설정해주세요!');
+    return;
+  }
+
+  alumniData = await fetchData('alumni');
+  messages = await fetchData('messages');
+  updateUI();
+}
+
+// 3. 요소 참조
 const profileSection = document.getElementById('profile-section');
 const myInfoDisplay = document.getElementById('my-info-display');
 const myInfoText = document.getElementById('my-info-text');
@@ -35,7 +60,7 @@ const searchBtn = document.getElementById('search-btn');
 const schoolInput = document.getElementById('school-input');
 const alumniList = document.getElementById('alumni-list');
 
-// 3. 상태 관리 (로그인/로그아웃)
+// 4. 상태 관리 (로그인/로그아웃)
 function updateUI() {
   if (currentUser) {
     profileSection.style.display = 'none';
@@ -54,18 +79,20 @@ function updateUI() {
   }
 }
 
-// 4. 프로필 등록 및 시작 기능 분리
-registerBtn.addEventListener('click', () => {
+// 5. 프로필 등록 및 시작 기능
+registerBtn.addEventListener('click', async () => {
   const school = document.getElementById('my-school').value.trim();
   const name = document.getElementById('my-name').value.trim();
   const major = document.getElementById('my-major').value.trim();
   const year = document.getElementById('my-year').value.trim();
 
   if (!school || !name || !major || !year) {
-    alert('모든 정보를 입력해주세요! (학교, 이름, 전공, 학번)');
+    alert('모든 정보를 입력해주세요!');
     return;
   }
 
+  // 실시간 중복 체크를 위해 최신 데이터 다시 로드
+  alumniData = await fetchData('alumni');
   const existing = alumniData.find(
     (p) => p.name === name && p.school === school,
   );
@@ -76,23 +103,25 @@ registerBtn.addEventListener('click', () => {
   }
 
   const newUser = { id: Date.now(), name, school, major, year };
-  alumniData.push(newUser);
-  localStorage.setItem('alumniDB', JSON.stringify(alumniData));
+  await postData('alumni', newUser);
 
   alert('프로필 등록이 완료되었습니다! 이제 "시작하기"를 눌러주세요.');
+  alumniData = await fetchData('alumni'); // 데이터 갱신
 });
 
-startBtn.addEventListener('click', () => {
+startBtn.addEventListener('click', async () => {
   const school = document.getElementById('my-school').value.trim();
   const name = document.getElementById('my-name').value.trim();
   const major = document.getElementById('my-major').value.trim();
   const year = document.getElementById('my-year').value.trim();
 
   if (!school || !name || !major || !year) {
-    alert('모든 정보를 입력해주세요! (학교, 이름, 전공, 학번)');
+    alert('정보를 모두 입력해주세요!');
     return;
   }
 
+  // 최신 데이터 로드 후 확인
+  alumniData = await fetchData('alumni');
   const user = alumniData.find(
     (p) =>
       p.name === name &&
@@ -102,9 +131,7 @@ startBtn.addEventListener('click', () => {
   );
 
   if (!user) {
-    alert(
-      '일치하는 프로필 정보가 없습니다. 정보를 확인하거나 먼저 등록해주세요!',
-    );
+    alert('일치하는 프로필 정보가 없습니다. 등록을 먼저 해주세요.');
     return;
   }
 
@@ -115,27 +142,22 @@ startBtn.addEventListener('click', () => {
   updateUI();
 });
 
-// 5. 로그아웃
+// 6. 로그아웃 및 검색
 logoutBtn.addEventListener('click', () => {
   currentUser = null;
   localStorage.removeItem('currentUser');
   updateUI();
 });
 
-// 탈퇴 버튼 연결
-deleteAccountBtn.addEventListener('click', () => {
-  if (currentUser) {
-    deleteAlumni(currentUser.id);
-  }
-});
-
-// 6. 동문 검색 및 렌더링
-searchBtn.addEventListener('click', () => {
+searchBtn.addEventListener('click', async () => {
   const keyword = schoolInput.value.trim();
   if (!keyword) {
     alert('학교 이름을 입력해주세요!');
     return;
   }
+
+  // 검색 시에도 최신 데이터 반영
+  alumniData = await fetchData('alumni');
   const results = alumniData.filter((p) => p.school.includes(keyword));
   renderResults(results);
 });
@@ -167,7 +189,8 @@ function renderResults(results) {
 }
 
 // 7. 메시지 관련 기능
-function renderMessages() {
+async function renderMessages() {
+  messages = await fetchData('messages');
   const myMessages = messages.filter((m) => m.toId === currentUser.id);
   messageList.innerHTML = '';
 
@@ -187,21 +210,11 @@ function renderMessages() {
         <span class="message-date">${new Date(msg.date).toLocaleString()}</span>
         <div class="message-btns">
           <button class="reply-btn" onclick="openModal(${msg.fromId}, '${msg.fromName}')">답장</button>
-          <button class="del-btn small" onclick="deleteMessage(${msg.id})" style="padding: 4px 8px; font-size: 0.65rem; background-color: #ff4d4f; margin-left: 5px;">삭제</button>
         </div>
       </div>
     `;
     messageList.appendChild(item);
   });
-}
-
-// 메시지 삭제 기능
-function deleteMessage(messageId) {
-  if (confirm('이 메시지를 삭제하시겠습니까?')) {
-    messages = messages.filter((m) => m.id !== messageId);
-    localStorage.setItem('alumniMessages', JSON.stringify(messages));
-    renderMessages();
-  }
 }
 
 const modal = document.getElementById('message-modal');
@@ -217,7 +230,7 @@ window.onclick = (e) => {
   if (e.target == modal) modal.style.display = 'none';
 };
 
-document.getElementById('send-btn').onclick = () => {
+document.getElementById('send-btn').onclick = async () => {
   const content = document.getElementById('message-text').value.trim();
   if (!content) {
     alert('내용을 입력해주세요!');
@@ -234,42 +247,17 @@ document.getElementById('send-btn').onclick = () => {
     date: new Date().toISOString(),
   };
 
-  messages.push(newMessage);
-  localStorage.setItem('alumniMessages', JSON.stringify(messages));
+  await postData('messages', newMessage);
 
   alert('메시지가 전송되었습니다!');
   modal.style.display = 'none';
   document.getElementById('message-text').value = '';
+  renderMessages();
 };
-
-// 8. 정보 삭제 (탈퇴) 기능
-function deleteAlumni(id) {
-  if (
-    confirm(
-      '정말로 탈퇴하시겠습니까? 등록된 모든 정보와 주고받은 메시지가 삭제됩니다.',
-    )
-  ) {
-    // 1. 유저 정보 삭제
-    alumniData = alumniData.filter((p) => p.id !== id);
-    localStorage.setItem('alumniDB', JSON.stringify(alumniData));
-
-    // 2. 해당 유저와 관련된 모든 메시지 삭제 (보낸 것, 받은 것 모두)
-    messages = messages.filter((m) => m.fromId !== id && m.toId !== id);
-    localStorage.setItem('alumniMessages', JSON.stringify(messages));
-
-    if (currentUser && currentUser.id === id) {
-      currentUser = null;
-      localStorage.removeItem('currentUser');
-      updateUI();
-      alert('탈퇴 처리가 완료되었습니다.');
-    } else {
-      const keyword = schoolInput.value.trim();
-      renderResults(alumniData.filter((p) => p.school.includes(keyword)));
-    }
-  }
-}
 
 schoolInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') searchBtn.click();
 });
-updateUI();
+
+// 실행 시작
+init();
